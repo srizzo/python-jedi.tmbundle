@@ -20,7 +20,7 @@ completion.show_docstrings()</string>
 	<key>inputFormat</key>
 	<string>text</string>
 	<key>keyEquivalent</key>
-	<string>~$</string>
+	<string>^</string>
 	<key>name</key>
 	<string>Docstrings for word</string>
 	<key>outputCaret</key>
