@@ -13,7 +13,7 @@ support_path = env['TM_BUNDLE_SUPPORT']
 sys.path.insert(0, support_path)
 from textmate import dialog, tm_query, plist, exit_codes
 
-sys.path.insert(0, support_path + b'/jedi')
+sys.path.insert(0, support_path + '/jedi')
 import jedi
 jedi.settings.case_insensitive_completion = False
 jedi.settings.add_bracket_after_function = True
@@ -129,8 +129,8 @@ def show_docstrings():
 
         theme_path = os.environ['TM_CURRENT_THEME_PATH']
         tm_query = os.environ['TM_QUERY']
-        font_name = subprocess.check_output([tm_query, '--setting', 'fontName']).rstrip() or "Menlo-Regular"
-        font_size = subprocess.check_output([tm_query, '--setting', 'fontSize']).rstrip() or "12"
+        font_name = "Menlo-Regular"
+        font_size = "12"
         # remove any digits at the end
         font_name = re.sub('\.\d+$', '', font_name, re.I)
         #font_name = "'" + font_name + "'" if font_name.include?(' ') &amp;&amp;

@@ -3,6 +3,7 @@
 format plist files.
 
 """
+from __future__ import print_function
 import os
 import plistlib
 import subprocess
@@ -24,11 +25,11 @@ pretty_list = os.environ['TM_PROPERTY_LIST_BUNDLE_SUPPORT'] + '/bin/pretty_plist
 
 
 def to_string(data):
-    return plistlib.writePlistToString(data)
+    return plistlib.dumps(data)
 
 def from_string(string):
     try:
-        return plistlib.readPlistFromString(string)
+        return plistlib.loads(string.encode())
     except ExpatError:
         # string must have contained a TM format plist, which cannot be
         # parsed. Try converting it using pretty_list
@@ -38,5 +39,5 @@ def from_string(string):
                                 )
 
         string, _ = proc.communicate(string)
-        print string
-        return plistlib.readPlistFromString(string)
+        print(string)
+        return plistlib.loads(string.encode())

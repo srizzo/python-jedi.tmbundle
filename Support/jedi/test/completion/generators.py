@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # -----------------
 # yield statement
 # -----------------
@@ -91,7 +93,7 @@ class Counter:
 
 for c in Counter(3, 8):
     #? int()
-    print c
+    print(c)
 
 
 # -----------------
@@ -118,7 +120,7 @@ b
 #? ['__call__']
 gen().close.__call__
 
-#? 
+#?
 gen().throw()
 
 #? ['co_consts']
@@ -134,5 +136,5 @@ gen().send.__call__
 #? tuple()
 gen().send()
 
-#? 
+#?
 gen()()

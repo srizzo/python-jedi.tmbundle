@@ -9,7 +9,7 @@
 	<key>description</key>
 	<string>Autocompletion functionality for Python using the &lt;a href="http://jedi.jedidjah.ch"&gt;Jedi autocompletion library.&lt;/a&gt;</string>
 	<key>name</key>
-	<string>Python Jedi Completion</string>
+	<string>Python Jedi</string>
 	<key>require</key>
 	<array>
 		<dict>

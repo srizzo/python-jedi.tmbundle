@@ -32,7 +32,7 @@ def popup(suggestions, already_typed="", static_prefix="", extra_chars="",
 
    # --returnChoice
     def item(val):
-        if isinstance(s, tuple):
+        if isinstance(suggestions, tuple):
             return {'display': val[0], 'insert': val[1]}
         return {'display': val}
     d = [item(s) for s in suggestions]
