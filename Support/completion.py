@@ -63,11 +63,7 @@ def show_signature():
     text = []
     if signatures is not None:
         for s in signatures:
-            args = [p.get_code().replace('\n', '') for p in
-                        getattr(s, 'params', None) if p]
-            args = ", ".join(args)
-            text.append("{call_name}({args})".format(
-                call_name=s.call_name, args=args))
+            text.append(s.docstring().splitlines()[0])
     dialog.tooltip("\n".join(text))
 
 
@@ -76,10 +72,13 @@ def goto_definition():
     script = get_script()
     if script is None:
         return
-    try:
-        definitions = script.goto_definitions()
-    except jedi.NotFoundError:
+
+    definitions = script.goto_definitions()
+
+    if not definitions:
         exit_codes.exit_show_tool_tip('No definition found')
+        return
+
     if definitions:
         definition = definitions[0]
         path = definition.module_path
@@ -97,118 +96,119 @@ def show_docstrings():
     script = get_script()
     if script is None:
         return
-    try:
 
-        def hex_to_rgba(value):
-            value = value.lstrip('#')
-            lv = len(value)
-            if lv == 3:
-                result = tuple(int(value[i:i+1], 16)*17 for i in (0, 1, 2)) + (1,)
-            if lv == 6:
-                result = tuple(int(value[i:i+2], 16) for i in (0, 2, 4)) + (1,)
-            if lv == 8:
-                result = tuple(int(value[i:i+2], 16) for i in (0, 2, 4)) + (int(
-                    value[6:], 16) / 255.0,)
-            return "rgba({0}, {1}, {2}, {3:.1f})".format(*result)
+    def hex_to_rgba(value):
+        value = value.lstrip('#')
+        lv = len(value)
+        if lv == 3:
+            result = tuple(int(value[i:i+1], 16)*17 for i in (0, 1, 2)) + (1,)
+        if lv == 6:
+            result = tuple(int(value[i:i+2], 16) for i in (0, 2, 4)) + (1,)
+        if lv == 8:
+            result = tuple(int(value[i:i+2], 16) for i in (0, 2, 4)) + (int(
+                value[6:], 16) / 255.0,)
+        return "rgba({0}, {1}, {2}, {3:.1f})".format(*result)
 
-        definitions = script.goto_definitions()
-        docs = ['<b>Docstring for %s</b></br>%s</br>%s' % (d.desc_with_module,
-            '='*40, d.doc) if d.doc else '|No Docstring for %s|' % d
-                 for d in definitions]
-        contents = ('\n' + '-' * 79 + '\n').join(docs)
+    definitions = script.goto_definitions()
 
-        # Provides CSS-friendly variations of common Mac fonts that you
-        # may use in TextMate. Feel free to edit these to your liking...
-        # Adapted from https://github.com/textmate/textmate.tmbundle/blob/master/Support/lib/doctohtml.rb
-        FONT_MAP = [
-            (r'\bcourier\b', 'Courier, "MS Courier New"'),
-            (r'\bbitstream.*mono\b', '"Bitstream Vera Sans Mono"'),
-            (r'\bandale\b', '"Andale Mono"'),
-            (r'\bDejaVuSansMono\b', '"DejaVu Sans Mono"')
-            ]
-
-        theme_path = os.environ['TM_CURRENT_THEME_PATH']
-        tm_query = os.environ['TM_QUERY']
-        font_name = "Menlo-Regular"
-        font_size = "12"
-        # remove any digits at the end
-        font_name = re.sub('\.\d+$', '', font_name, re.I)
-        #font_name = "'" + font_name + "'" if font_name.include?(' ') &amp;&amp;
-        #        !font_name.include?('"')
-
-        for fonts in FONT_MAP:
-            if re.match(fonts[0], font_name):
-                font_name = fonts[1]
-                break
-
-        with io.open(theme_path, 'r', encoding='utf-8') as f:
-            theme_plist = f.read()
-        body_bg = '#fff'
-        body_fg = '#000'
-        theme_plist = plist.from_string(theme_plist)
-        for setting in theme_plist['settings']:
-            # The general settings dict has no 'name' key
-            if (not 'name' in setting and 'settings' in setting):
-                body_bg = setting['settings'].get('background', '#ffffff')
-                body_fg = setting['settings'].get('foreground', '#000000')
-                break
-        if body_fg[0] == '#': body_fg = hex_to_rgba(body_fg)
-        if body_bg[0] == '#': body_bg = hex_to_rgba(body_bg)
-
-        html = """
-        <style type="text/css" media="screen">
-            body {{
-                padding-top: 10px;
-                padding-left: 0;
-            }}
-            .tip {{
-                font-family: {font_name}, monospace;
-                font-size: {font_size}px;
-                background-color: {body_bg};
-                color: {body_fg};
-                border: 1px solid {body_fg};
-                position: relative;
-                margin: 0;
-                padding: 12px;
-                text-align: left;
-                border-radius: 5px 10px 10px 10px;
-                box-shadow: 0px 5px 10px rgba(0,0,0,0.25);
-            }}
-            .tip:before {{
-                position: absolute;
-                display: inline-block;
-                content: "";
-                border-color: transparent transparent {body_fg} transparent;
-                border-style: solid;
-                border-width: 10px;
-                height:0;
-                width:0;
-                top:-20px;
-                left:2px;
-            }}
-            .tip:after {{
-                position: absolute;
-                display: inline-block;
-                content: "";
-                border-color: transparent transparent {body_bg} transparent;
-                border-style: solid;
-                border-width: 10px;
-                height:0;
-                width:0;
-                top:-18px;
-                left:2px;
-            }}
-
-        </style>
-        <div class="tip">
-        {contents}
-        </div>
-        """
-        html = html.format(font_name=font_name, font_size=font_size,
-                body_bg=body_bg, body_fg=body_fg, contents=contents)
-
-        dialog.tooltip(html, format='html', transparent=True)
-        exit_codes.exit_discard()
-
-    except jedi.NotFoundError:
+    if not definitions:
         dialog.tooltip('No documentation found')
+        return
+
+    docs = ['<b>Docstring for %s</b></br>%s</br>%s' % (d.desc_with_module,
+        '='*40, d.docstring()) if d.docstring() else '|No Docstring for %s|' % d
+             for d in definitions]
+    contents = ('\n' + '-' * 79 + '\n').join(docs)
+
+    # Provides CSS-friendly variations of common Mac fonts that you
+    # may use in TextMate. Feel free to edit these to your liking...
+    # Adapted from https://github.com/textmate/textmate.tmbundle/blob/master/Support/lib/doctohtml.rb
+    FONT_MAP = [
+        (r'\bcourier\b', 'Courier, "MS Courier New"'),
+        (r'\bbitstream.*mono\b', '"Bitstream Vera Sans Mono"'),
+        (r'\bandale\b', '"Andale Mono"'),
+        (r'\bDejaVuSansMono\b', '"DejaVu Sans Mono"')
+        ]
+
+    theme_path = os.environ['TM_CURRENT_THEME_PATH']
+    tm_query = os.environ['TM_QUERY']
+    font_name = "Menlo-Regular"
+    font_size = "12"
+    # remove any digits at the end
+    font_name = re.sub('\.\d+$', '', font_name, re.I)
+    #font_name = "'" + font_name + "'" if font_name.include?(' ') &amp;&amp;
+    #        !font_name.include?('"')
+
+    for fonts in FONT_MAP:
+        if re.match(fonts[0], font_name):
+            font_name = fonts[1]
+            break
+
+    with io.open(theme_path, 'r', encoding='utf-8') as f:
+        theme_plist = f.read()
+    body_bg = '#fff'
+    body_fg = '#000'
+    theme_plist = plist.from_string(theme_plist)
+    for setting in theme_plist['settings']:
+        # The general settings dict has no 'name' key
+        if (not 'name' in setting and 'settings' in setting):
+            body_bg = setting['settings'].get('background', '#ffffff')
+            body_fg = setting['settings'].get('foreground', '#000000')
+            break
+    if body_fg[0] == '#': body_fg = hex_to_rgba(body_fg)
+    if body_bg[0] == '#': body_bg = hex_to_rgba(body_bg)
+
+    html = """
+    <style type="text/css" media="screen">
+        body {{
+            padding-top: 10px;
+            padding-left: 0;
+        }}
+        .tip {{
+            font-family: {font_name}, monospace;
+            font-size: {font_size}px;
+            background-color: {body_bg};
+            color: {body_fg};
+            border: 1px solid {body_fg};
+            position: relative;
+            margin: 0;
+            padding: 12px;
+            text-align: left;
+            border-radius: 5px 10px 10px 10px;
+            box-shadow: 0px 5px 10px rgba(0,0,0,0.25);
+        }}
+        .tip:before {{
+            position: absolute;
+            display: inline-block;
+            content: "";
+            border-color: transparent transparent {body_fg} transparent;
+            border-style: solid;
+            border-width: 10px;
+            height:0;
+            width:0;
+            top:-20px;
+            left:2px;
+        }}
+        .tip:after {{
+            position: absolute;
+            display: inline-block;
+            content: "";
+            border-color: transparent transparent {body_bg} transparent;
+            border-style: solid;
+            border-width: 10px;
+            height:0;
+            width:0;
+            top:-18px;
+            left:2px;
+        }}
+
+    </style>
+    <div class="tip">
+    {contents}
+    </div>
+    """
+    html = html.format(font_name=font_name, font_size=font_size,
+            body_bg=body_bg, body_fg=body_fg, contents=contents)
+
+    dialog.tooltip(html, format='html', transparent=True)
+    exit_codes.exit_discard()
